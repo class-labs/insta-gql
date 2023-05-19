@@ -425,7 +425,7 @@ builder.mutationType({
     }),
 
     likePost: t.field({
-      type: 'Boolean',
+      type: 'Post',
       args: {
         postId: t.arg.string({ required: true }),
       },
@@ -435,13 +435,16 @@ builder.mutationType({
         if (!post) {
           throw new Error('Invalid postId');
         }
-        const likedBy = post.likedBy.filter((userId) => userId !== user.id);
-        const wasRemoved = post.likedBy.length !== likedBy.length;
-        if (!wasRemoved) {
-          likedBy.push(user.id);
+        const likedBy = new Set(post.likedBy);
+        if (likedBy.has(user.id)) {
+          likedBy.delete(user.id);
+        } else {
+          likedBy.add(user.id);
         }
-        await db.Post.update(postId, { likedBy });
-        return !wasRemoved;
+        const newPost = await db.Post.update(postId, {
+          likedBy: Array.from(likedBy),
+        });
+        return newPost ?? post;
       },
     }),
   }),
