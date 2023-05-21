@@ -4,6 +4,7 @@ import { extname, resolve } from 'path';
 
 import type { Application } from 'express';
 
+import { createTimestamp } from './support/timestamp';
 import { createId } from './support/createId';
 import { sign } from './support/signature';
 import { imageExtensions, imageTypes } from './support/image';
@@ -43,7 +44,7 @@ export function attachRoutes(app: Application) {
       response.status(400).send({ error: 'Bad Request' });
       return;
     }
-    const id = sign(createId());
+    const id = sign(createTimestamp() + createId());
     await fs.mkdir(uploadsDir, { recursive: true });
     const fileName = id + '.' + fileExt;
     const filePath = resolve(uploadsDir, fileName);
