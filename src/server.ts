@@ -3,8 +3,8 @@ import { createServer } from '@graphql-yoga/node';
 import type { Application } from 'express';
 
 import { schema } from './graphql/schema';
-import { db } from './db';
 import { attachRoutes } from './routes';
+import { createContext } from './graphql/context';
 
 export function attachHandlers(app: Application) {
   app.disable('x-powered-by');
@@ -12,27 +12,7 @@ export function attachHandlers(app: Application) {
   const server = createServer({
     schema,
     graphiql: false,
-    context: ({ request }) => {
-      const context = {
-        getSession: async () => {
-          const authHeader = request.headers.get('Authorization') ?? '';
-          const sessionId = authHeader.replace(/^Bearer /i, '');
-          return await db.Session.getById(sessionId);
-        },
-        getCurrentUser: async () => {
-          const session = await context.getSession();
-          return await db.User.getById(session?.user ?? '');
-        },
-        authenticate: async () => {
-          const user = await context.getCurrentUser();
-          if (!user) {
-            throw new Error('Not authenticated');
-          }
-          return user;
-        },
-      };
-      return context;
-    },
+    context: ({ request }) => createContext(request),
   });
   app.use('/graphql', server);
   app.get('/playground', expressPlayground({ endpoint: '/graphql' }));

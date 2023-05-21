@@ -2,6 +2,7 @@ import SchemaBuilder from '@pothos/core';
 import { db } from '../db';
 import { removeNulls } from '../support/removeNulls';
 import type { User, Session, Post, Comment } from '../types';
+import { Context } from './context';
 
 type Objects = {
   User: User;
@@ -9,12 +10,6 @@ type Objects = {
   PostListItem: Post;
   Comment: Comment;
   Session: Session;
-};
-
-type Context = {
-  getSession: () => Promise<Session | null>;
-  getCurrentUser: () => Promise<User | null>;
-  authenticate: () => Promise<User>;
 };
 
 const builder = new SchemaBuilder<{ Objects: Objects; Context: Context }>({});
