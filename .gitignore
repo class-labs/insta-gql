@@ -2,6 +2,5 @@ data/
 lib/
 node_modules/
 uploads/
-
-# macOS
 .DS_Store
+.env

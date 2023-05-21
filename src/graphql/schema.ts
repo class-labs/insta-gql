@@ -1,6 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { db } from '../db';
 import { removeNulls } from '../support/removeNulls';
+import { toFullyQualifiedUrl } from '../support/image';
 import type { User, Session, Post, Comment } from '../types';
 import { Context } from './context';
 
@@ -52,7 +53,11 @@ builder.objectType('PostListItem', {
         return user;
       },
     }),
-    photo: t.exposeString('photo', {}),
+    photo: t.string({
+      resolve: (post, args, context) => {
+        return toFullyQualifiedUrl(post.photo, context.host);
+      },
+    }),
     caption: t.exposeString('caption', {}),
     isLikedByViewer: t.boolean({
       resolve: async (post, args, context) => {
@@ -87,7 +92,11 @@ builder.objectType('Post', {
         return user;
       },
     }),
-    photo: t.exposeString('photo', {}),
+    photo: t.string({
+      resolve: (post, args, context) => {
+        return toFullyQualifiedUrl(post.photo, context.host);
+      },
+    }),
     caption: t.exposeString('caption', {}),
     isLikedByViewer: t.boolean({
       resolve: async (post, args, context) => {
