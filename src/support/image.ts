@@ -2,13 +2,20 @@ import { verify } from './signature';
 
 const imageProxyUrl = process.env.IMAGE_PROXY;
 
-const supportedImageTypes = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
+// The single-letter identifier will be encoded into the signed file ID
+const supportedImageTypes: Record<string, { type: string; ext: string }> = {
+  j: { type: 'image/jpeg', ext: 'jpg' },
+  p: { type: 'image/png', ext: 'png' },
 };
 
-export const imageTypes = new Map(Object.entries(supportedImageTypes));
-export const imageExtensions = new Set(Object.values(supportedImageTypes));
+export const imageByType = new Map(
+  Object.entries(supportedImageTypes).map(([id, { type, ext }]) => {
+    return [type, { id, ext }];
+  }),
+);
+export const imageExtensions = new Set(
+  Object.values(supportedImageTypes).map(({ ext }) => ext),
+);
 
 export function validateImagePath(url: string) {
   const match = url.match(/^\/images\/(\w+\.\w+)$/);

@@ -7,7 +7,7 @@ import type { Application } from 'express';
 import { createTimestamp } from './support/timestamp';
 import { createId } from './support/createId';
 import { sign } from './support/signature';
-import { imageExtensions, imageTypes } from './support/image';
+import { imageExtensions, imageByType } from './support/image';
 
 const UPLOADS_DIR = 'uploads';
 const uploadsDir = resolve(__dirname, '..', UPLOADS_DIR);
@@ -39,14 +39,14 @@ export function attachRoutes(app: Application) {
       request.header('content-disposition') ??
       request.header('content-type') ??
       '';
-    const fileExt = imageTypes.get(contentType);
-    if (!fileExt) {
+    const imageType = imageByType.get(contentType);
+    if (!imageType) {
       response.status(400).send({ error: 'Bad Request' });
       return;
     }
-    const id = sign(createTimestamp() + createId());
+    const id = sign(createTimestamp() + createId() + imageType.id);
     await fs.mkdir(uploadsDir, { recursive: true });
-    const fileName = id + '.' + fileExt;
+    const fileName = id + '.' + imageType.ext;
     const filePath = resolve(uploadsDir, fileName);
     const fileStream = createWriteStream(filePath);
     request.on('end', () => {
