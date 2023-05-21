@@ -1,5 +1,5 @@
 import expressPlayground from 'graphql-playground-middleware-express';
-import { createServer } from '@graphql-yoga/node';
+import { createYoga } from 'graphql-yoga';
 import type { Application } from 'express';
 
 import { schema } from './graphql/schema';
@@ -9,7 +9,7 @@ import { createContext } from './graphql/context';
 export function attachHandlers(app: Application) {
   app.disable('x-powered-by');
   attachRoutes(app);
-  const server = createServer({
+  const server = createYoga({
     schema,
     graphiql: false,
     context: ({ request }) => createContext(request),

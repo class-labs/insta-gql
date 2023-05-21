@@ -1,4 +1,4 @@
-import { GraphQLYogaError } from '@graphql-yoga/common';
+import { GraphQLError } from 'graphql';
 import { db } from '../db';
 import type { User, Session } from '../types';
 
@@ -25,7 +25,7 @@ export function createContext(request: Request) {
     authenticate: async () => {
       const user = await context.getCurrentUser();
       if (!user) {
-        throw new GraphQLYogaError('Not authenticated');
+        throw new GraphQLError('Not authenticated');
       }
       return user;
     },
