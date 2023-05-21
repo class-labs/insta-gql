@@ -1,3 +1,4 @@
+import { GraphQLYogaError } from '@graphql-yoga/common';
 import SchemaBuilder from '@pothos/core';
 import { db } from '../db';
 import { removeNulls } from '../support/removeNulls';
@@ -32,7 +33,7 @@ builder.objectType('Session', {
       resolve: async (session) => {
         const user = await db.User.getById(session.user);
         if (!user) {
-          throw new Error('Invalid userId in session');
+          throw new GraphQLYogaError('Invalid userId in session');
         }
         return user;
       },
@@ -48,7 +49,9 @@ builder.objectType('PostListItem', {
       resolve: async (post) => {
         const user = await db.User.getById(post.author);
         if (!user) {
-          throw new Error(`Invalid userId at post(${post.id}).author`);
+          throw new GraphQLYogaError(
+            `Invalid userId at post(${post.id}).author`,
+          );
         }
         return user;
       },
@@ -87,7 +90,9 @@ builder.objectType('Post', {
       resolve: async (post) => {
         const user = await db.User.getById(post.author);
         if (!user) {
-          throw new Error(`Invalid userId at post(${post.id}).author`);
+          throw new GraphQLYogaError(
+            `Invalid userId at post(${post.id}).author`,
+          );
         }
         return user;
       },
@@ -136,7 +141,9 @@ builder.objectType('Comment', {
       resolve: async (comment) => {
         const user = await db.User.getById(comment.author);
         if (!user) {
-          throw new Error(`Invalid userId at comment(${comment.id}).author`);
+          throw new GraphQLYogaError(
+            `Invalid userId at comment(${comment.id}).author`,
+          );
         }
         return user;
       },
@@ -292,13 +299,13 @@ builder.mutationType({
       resolve: async (parent, args) => {
         const { name, profilePhoto, username, password } = args.input;
         if (!username.length || username.match(/\W/)) {
-          throw new Error('Invalid username');
+          throw new GraphQLYogaError('Invalid username');
         }
         const existingUsers = await db.User.findWhere(
           (user) => user.username.toLowerCase() === username.toLowerCase(),
         );
         if (existingUsers.length) {
-          throw new Error('Username already exists');
+          throw new GraphQLYogaError('Username already exists');
         }
         return await db.User.insert({
           name,
@@ -321,7 +328,7 @@ builder.mutationType({
         const { username } = updates;
         if (username !== undefined) {
           if (!username.length || username.match(/\W/)) {
-            throw new Error('Invalid username');
+            throw new GraphQLYogaError('Invalid username');
           }
           const existingUsers = await db.User.findWhere(
             (user) =>
@@ -329,7 +336,7 @@ builder.mutationType({
               user.username.toLowerCase() === username.toLowerCase(),
           );
           if (existingUsers.length) {
-            throw new Error('Username already exists');
+            throw new GraphQLYogaError('Username already exists');
           }
         }
         const newUser = await db.User.update(user.id, updates);
@@ -346,7 +353,7 @@ builder.mutationType({
         const user = await context.authenticate();
         const { photo, caption } = args.input;
         if (!validateImagePath(photo)) {
-          throw new Error('Invalid photo');
+          throw new GraphQLYogaError('Invalid photo');
         }
         const post = await db.Post.insert({
           author: user.id,
@@ -370,10 +377,10 @@ builder.mutationType({
         const { postId } = args;
         const post = await db.Post.getById(postId);
         if (!post) {
-          throw new Error('Invalid postId');
+          throw new GraphQLYogaError('Invalid postId');
         }
         if (post.author !== user.id) {
-          throw new Error('Permission denied');
+          throw new GraphQLYogaError('Permission denied');
         }
         await db.Post.delete(post.id);
         return true;
@@ -390,7 +397,7 @@ builder.mutationType({
         const { postId, text } = args.input;
         const post = await db.Post.getById(postId);
         if (!post) {
-          throw new Error('Invalid postId');
+          throw new GraphQLYogaError('Invalid postId');
         }
         const comment = await db.Comment.insert({
           post: post.id,
@@ -414,15 +421,17 @@ builder.mutationType({
         const { commentId } = args;
         const comment = await db.Comment.getById(commentId);
         if (!comment) {
-          throw new Error('Invalid commentId');
+          throw new GraphQLYogaError('Invalid commentId');
         }
         const postId = comment.post;
         const post = await db.Post.getById(postId);
         if (!post) {
-          throw new Error('Comment does not belong to any known post');
+          throw new GraphQLYogaError(
+            'Comment does not belong to any known post',
+          );
         }
         if (comment.author !== user.id && post.author !== user.id) {
-          throw new Error('Permission denied');
+          throw new GraphQLYogaError('Permission denied');
         }
         const newCommentList = post.comments.filter((id) => id !== comment.id);
         await db.Post.update(post.id, { comments: newCommentList });
@@ -440,7 +449,7 @@ builder.mutationType({
         const user = await context.authenticate();
         const post = await db.Post.getById(postId);
         if (!post) {
-          throw new Error('Invalid postId');
+          throw new GraphQLYogaError('Invalid postId');
         }
         const likedBy = new Set(post.likedBy);
         if (likedBy.has(user.id)) {
