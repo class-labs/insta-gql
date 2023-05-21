@@ -1,7 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { db } from '../db';
 import { removeNulls } from '../support/removeNulls';
-import { toFullyQualifiedUrl } from '../support/image';
+import { toFullyQualifiedUrl, validateImagePath } from '../support/image';
 import type { User, Session, Post, Comment } from '../types';
 import { Context } from './context';
 
@@ -345,6 +345,9 @@ builder.mutationType({
       resolve: async (parent, args, context) => {
         const user = await context.authenticate();
         const { photo, caption } = args.input;
+        if (!validateImagePath(photo)) {
+          throw new Error('Invalid photo');
+        }
         const post = await db.Post.insert({
           author: user.id,
           photo,
