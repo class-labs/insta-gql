@@ -8,26 +8,41 @@ const supportedImageTypes: Record<string, { type: string; ext: string }> = {
   p: { type: 'image/png', ext: 'png' },
 };
 
+const imageById = new Map(Object.entries(supportedImageTypes));
+
 export const imageByType = new Map(
   Object.entries(supportedImageTypes).map(([id, { type, ext }]) => {
     return [type, { id, ext }];
   }),
 );
-export const imageExtensions = new Set(
-  Object.values(supportedImageTypes).map(({ ext }) => ext),
-);
 
-export function validateImagePath(url: string) {
-  const match = url.match(/^\/images\/(\w+\.\w+)$/);
-  if (!match) {
+export function validateImageFileName(
+  fileName: string,
+  options: { verifySignature: boolean },
+) {
+  if (!fileName.match(/^\w+\.\w+$/)) {
     return false;
   }
-  const fileName = match[1] ?? '';
   const [id = '', ext = ''] = fileName.split('.');
-  if (!imageExtensions.has(ext)) {
+  if (options.verifySignature && !verify(id)) {
     return false;
   }
-  return verify(id);
+  const typeId = id.slice(0, -8).slice(-1);
+  const imageType = imageById.get(typeId);
+  if (!imageType || ext !== imageType.ext) {
+    return false;
+  }
+  return true;
+}
+
+export function validateImagePath(path: string) {
+  const prefix = '/images/';
+  if (!path.startsWith(prefix)) {
+    return false;
+  }
+  return validateImageFileName(path.replace(prefix, ''), {
+    verifySignature: true,
+  });
 }
 
 export function toFullyQualifiedUrl(imageUrl: string, host: string) {

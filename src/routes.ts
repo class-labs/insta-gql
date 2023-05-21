@@ -7,7 +7,7 @@ import type { Application } from 'express';
 import { createTimestamp } from './support/timestamp';
 import { createId } from './support/createId';
 import { sign } from './support/signature';
-import { imageExtensions, imageByType } from './support/image';
+import { imageByType, validateImageFileName } from './support/image';
 
 const UPLOADS_DIR = 'uploads';
 const uploadsDir = resolve(__dirname, '..', UPLOADS_DIR);
@@ -15,11 +15,11 @@ const uploadsDir = resolve(__dirname, '..', UPLOADS_DIR);
 export function attachRoutes(app: Application) {
   app.get('/images/:fileName', (request, response, next) => {
     const fileName = request.params.fileName ?? '';
-    if (!fileName.match(/^\w+\.\w+$/)) {
-      return next();
-    }
-    const ext = extname(fileName).slice(1);
-    if (!imageExtensions.has(ext)) {
+    // Note: We're don't verify the signature here because in cases where the
+    // signing key is not specified in the environment variable, it will change
+    // each time the server starts.
+    const isValid = validateImageFileName(fileName, { verifySignature: false });
+    if (!isValid) {
       return next();
     }
     const filePath = resolve(uploadsDir, fileName);
