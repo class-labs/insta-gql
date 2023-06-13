@@ -55,8 +55,8 @@ builder.objectType('PostListItem', {
       },
     }),
     photo: t.string({
-      resolve: (post, args, context) => {
-        return toFullyQualifiedUrl(post.photo, context.host);
+      resolve: (post) => {
+        return toFullyQualifiedUrl(post.photo);
       },
     }),
     caption: t.exposeString('caption', {}),
@@ -94,8 +94,8 @@ builder.objectType('Post', {
       },
     }),
     photo: t.string({
-      resolve: (post, args, context) => {
-        return toFullyQualifiedUrl(post.photo, context.host);
+      resolve: (post) => {
+        return toFullyQualifiedUrl(post.photo);
       },
     }),
     caption: t.exposeString('caption', {}),

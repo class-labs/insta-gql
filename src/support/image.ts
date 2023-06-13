@@ -1,6 +1,5 @@
+import { IMAGE_SERVING_URL } from './constants';
 import { verify } from './signature';
-
-const imageProxyUrl = process.env.IMAGE_PROXY;
 
 // The single-letter identifier will be encoded into the signed file ID
 const supportedImageTypes: Record<string, { type: string; ext: string }> = {
@@ -40,14 +39,15 @@ export function validateImagePath(path: string) {
   return validateImageFileName(path.replace(prefix, ''));
 }
 
-export function toFullyQualifiedUrl(imageUrl: string, host: string) {
+export function toFullyQualifiedUrl(fileName: string) {
   // If it's already a fully qualified URL then return as is
-  if (!imageUrl.startsWith('/')) {
-    return imageUrl;
+  const [proto] = fileName.split('//');
+  if (proto === 'http:' || proto === 'https:') {
+    return fileName;
   }
-  if (imageProxyUrl) {
-    const fileName = imageUrl.replace(/^\/images\//, '');
-    return imageProxyUrl.replace('%FILE_NAME%', fileName);
-  }
-  return 'https://' + host + imageUrl;
+  // For legacy reasons
+  const normalizedFileName = fileName.startsWith('/images/')
+    ? fileName.replace('/images/', '')
+    : fileName;
+  return IMAGE_SERVING_URL.replace('%FILE_NAME%', normalizedFileName);
 }
