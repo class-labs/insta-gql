@@ -6,13 +6,13 @@ import type { Application } from 'express';
 import fetch from 'node-fetch';
 import { Record, String } from 'runtypes';
 
-import { createTimestamp } from './support/timestamp';
-import { createId } from './support/createId';
-import { sign } from './support/signature';
-import { imageByType, validateImageFileName } from './support/image';
-import { pipeStreamAsync } from './support/pipeStreamAsync';
-import { safeAsync } from './support/safeAsync';
-import { IMAGE_UPLOAD_URL, SECRET_KEY } from './support/constants';
+import { createTimestamp } from '../support/timestamp';
+import { createId } from '../support/createId';
+import { sign } from '../support/signature';
+import { imageByType, validateImageFileName } from '../support/image';
+import { pipeStreamAsync } from '../support/pipeStreamAsync';
+import { safeAsync } from '../support/safeAsync';
+import { IMAGE_UPLOAD_URL, SECRET_KEY } from '../support/constants';
 
 const UPLOADS_DIR = 'uploads';
 const uploadsDir = resolve(__dirname, '..', UPLOADS_DIR);
@@ -23,7 +23,7 @@ const UploadResponseBody = Record({
   url: String,
 });
 
-export function attachRoutes(app: Application) {
+export default (app: Application) => {
   app.get(
     '/images/:fileName',
     safeAsync(async (request, response, next) => {
@@ -87,4 +87,4 @@ export function attachRoutes(app: Application) {
       response.json({ url: `/images/${fileName}` });
     }),
   );
-}
+};
