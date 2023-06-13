@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import { createReadStream, createWriteStream } from 'fs';
-import { extname, resolve } from 'path';
+import { resolve } from 'path';
 
 import type { Application } from 'express';
 
@@ -8,12 +8,13 @@ import { createTimestamp } from './support/timestamp';
 import { createId } from './support/createId';
 import { sign } from './support/signature';
 import { imageByType, validateImageFileName } from './support/image';
+import { pipeStreamAsync } from './support/pipeStreamAsync';
 
 const UPLOADS_DIR = 'uploads';
 const uploadsDir = resolve(__dirname, '..', UPLOADS_DIR);
 
 export function attachRoutes(app: Application) {
-  app.get('/images/:fileName', (request, response, next) => {
+  app.get('/images/:fileName', async (request, response, next) => {
     const fileName = request.params.fileName ?? '';
     // Note: We don't verify the signature here because in cases where the
     // signing key is not specified in the environment variable, it will change
@@ -25,18 +26,13 @@ export function attachRoutes(app: Application) {
       return next();
     }
     const filePath = resolve(uploadsDir, fileName);
+    const stats = await fs.stat(filePath);
+    if (!stats.isFile()) {
+      return next();
+    }
+    response.header('Content-Type', imageDetails.type);
     const readStream = createReadStream(filePath);
-    readStream.once('data', () => {
-      response.header('Content-Type', imageDetails.type);
-    });
-    readStream.on('error', (error) => {
-      if (Object(error).code === 'ENOENT') {
-        next();
-      } else {
-        next(error);
-      }
-    });
-    readStream.pipe(response);
+    await pipeStreamAsync(readStream, response);
   });
 
   app.post('/images', async (request, response) => {
@@ -53,10 +49,8 @@ export function attachRoutes(app: Application) {
     await fs.mkdir(uploadsDir, { recursive: true });
     const fileName = id + '.' + imageType.ext;
     const filePath = resolve(uploadsDir, fileName);
-    const fileStream = createWriteStream(filePath);
-    request.on('end', () => {
-      response.json({ url: `/images/${fileName}` });
-    });
-    request.pipe(fileStream);
+    const writeStream = createWriteStream(filePath);
+    await pipeStreamAsync(request, writeStream);
+    response.json({ url: `/images/${fileName}` });
   });
 }
