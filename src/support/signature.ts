@@ -1,11 +1,9 @@
 import { createHmac } from 'crypto';
 
-import { createId } from './createId';
-
-const secret = process.env.SECRET_KEY || createId();
+import { SECRET_KEY } from './constants';
 
 function getSignature(text: string) {
-  const hmac = createHmac('sha256', secret);
+  const hmac = createHmac('sha256', SECRET_KEY);
   hmac.update(text);
   const hex = hmac.digest('hex').slice(0, 10);
   return parseInt(hex, 16).toString(36).padStart(8, '0');
