@@ -19,12 +19,7 @@ export function attachRoutes(app: Application) {
     '/images/:fileName',
     safeAsync(async (request, response, next) => {
       const fileName = request.params.fileName ?? '';
-      // Note: We don't verify the signature here because in cases where the
-      // signing key is not specified in the environment variable, it will change
-      // each time the server starts.
-      const imageDetails = validateImageFileName(fileName, {
-        verifySignature: false,
-      });
+      const imageDetails = validateImageFileName(fileName);
       if (!imageDetails) {
         return next();
       }

@@ -16,15 +16,12 @@ export const imageByType = new Map(
   }),
 );
 
-export function validateImageFileName(
-  fileName: string,
-  options: { verifySignature: boolean },
-) {
+export function validateImageFileName(fileName: string) {
   if (!fileName.match(/^\w+\.\w+$/)) {
     return;
   }
   const [id = '', ext = ''] = fileName.split('.');
-  if (options.verifySignature && !verify(id)) {
+  if (!verify(id)) {
     return;
   }
   const typeId = id.slice(0, -8).slice(-1);
@@ -40,9 +37,7 @@ export function validateImagePath(path: string) {
   if (!path.startsWith(prefix)) {
     return false;
   }
-  return validateImageFileName(path.replace(prefix, ''), {
-    verifySignature: true,
-  });
+  return validateImageFileName(path.replace(prefix, ''));
 }
 
 export function toFullyQualifiedUrl(imageUrl: string, host: string) {
