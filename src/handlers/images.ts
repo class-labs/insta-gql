@@ -14,8 +14,8 @@ import { pipeStreamAsync } from '../support/pipeStreamAsync';
 import { safeAsync } from '../support/safeAsync';
 import { IMAGE_UPLOAD_URL, SECRET_KEY } from '../support/constants';
 
-const UPLOADS_DIR = 'uploads';
-const uploadsDir = resolve(__dirname, '..', UPLOADS_DIR);
+const uploadsDirRelative = '../../uploads';
+const uploadsDir = resolve(__dirname, uploadsDirRelative);
 
 const UploadResponseBody = Record({
   id: String,
