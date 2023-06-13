@@ -21,18 +21,18 @@ export function validateImageFileName(
   options: { verifySignature: boolean },
 ) {
   if (!fileName.match(/^\w+\.\w+$/)) {
-    return false;
+    return;
   }
   const [id = '', ext = ''] = fileName.split('.');
   if (options.verifySignature && !verify(id)) {
-    return false;
+    return;
   }
   const typeId = id.slice(0, -8).slice(-1);
-  const imageType = imageById.get(typeId);
-  if (!imageType || ext !== imageType.ext) {
-    return false;
+  const imageDetails = imageById.get(typeId);
+  if (!imageDetails || ext !== imageDetails.ext) {
+    return;
   }
-  return true;
+  return imageDetails;
 }
 
 export function validateImagePath(path: string) {

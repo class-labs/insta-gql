@@ -15,15 +15,20 @@ const uploadsDir = resolve(__dirname, '..', UPLOADS_DIR);
 export function attachRoutes(app: Application) {
   app.get('/images/:fileName', (request, response, next) => {
     const fileName = request.params.fileName ?? '';
-    // Note: We're don't verify the signature here because in cases where the
+    // Note: We don't verify the signature here because in cases where the
     // signing key is not specified in the environment variable, it will change
     // each time the server starts.
-    const isValid = validateImageFileName(fileName, { verifySignature: false });
-    if (!isValid) {
+    const imageDetails = validateImageFileName(fileName, {
+      verifySignature: false,
+    });
+    if (!imageDetails) {
       return next();
     }
     const filePath = resolve(uploadsDir, fileName);
     const readStream = createReadStream(filePath);
+    readStream.once('data', () => {
+      response.header('Content-Type', imageDetails.type);
+    });
     readStream.on('error', (error) => {
       if (Object(error).code === 'ENOENT') {
         next();
