@@ -9,10 +9,15 @@ import { Record, String } from 'runtypes';
 import { createTimestamp } from '../support/timestamp';
 import { createId } from '../support/createId';
 import { sign } from '../support/signature';
-import { imageByType, validateImageFileName } from '../support/image';
+import {
+  imageByType,
+  toFullyQualifiedUrl,
+  validateImageFileName,
+} from '../support/image';
 import { pipeStreamAsync } from '../support/pipeStreamAsync';
 import { safeAsync } from '../support/safeAsync';
 import { IMAGE_UPLOAD_URL, SECRET_KEY } from '../support/constants';
+import { Readable } from 'stream';
 
 const uploadsDirRelative = '../../uploads';
 const uploadsDir = resolve(__dirname, uploadsDirRelative);
@@ -22,6 +27,32 @@ const UploadResponseBody = Record({
   fileName: String,
   url: String,
 });
+
+async function sendUpload(
+  url: string,
+  contentType: string,
+  readStream: Readable,
+) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': contentType,
+      Authorization: `Bearer ${SECRET_KEY}`,
+    },
+    body: readStream,
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Unexpected response status from upstream server: ${response.status}`,
+    );
+  }
+  const result = await response.json();
+  if (!UploadResponseBody.guard(result)) {
+    throw new Error(`Unexpected response body from upstream server`);
+  }
+  return result;
+}
 
 export default (app: Application) => {
   app.get(
@@ -57,25 +88,9 @@ export default (app: Application) => {
       }
 
       if (IMAGE_UPLOAD_URL) {
-        const response = await fetch(IMAGE_UPLOAD_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/octet-stream',
-            'Content-Disposition': contentType,
-            Authorization: `Bearer ${SECRET_KEY}`,
-          },
-          body: request.body,
-        });
-        if (!response.ok) {
-          throw new Error(
-            `Unexpected response status from upstream server: ${response.status}`,
-          );
-        }
-        const result = await response.json();
-        if (!UploadResponseBody.guard(result)) {
-          throw new Error(`Unexpected response body from upstream server`);
-        }
-        return result;
+        const result = await sendUpload(IMAGE_UPLOAD_URL, contentType, request);
+        response.json(result);
+        return;
       }
 
       const id = sign(createTimestamp() + createId() + imageType.id);
@@ -84,7 +99,11 @@ export default (app: Application) => {
       const filePath = resolve(uploadsDir, fileName);
       const writeStream = createWriteStream(filePath);
       await pipeStreamAsync(request, writeStream);
-      response.json({ url: `/images/${fileName}` });
+      response.json({
+        id,
+        fileName,
+        url: toFullyQualifiedUrl(fileName),
+      });
     }),
   );
 };
