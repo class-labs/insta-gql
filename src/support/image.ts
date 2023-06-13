@@ -31,14 +31,6 @@ export function validateImageFileName(fileName: string) {
   return imageDetails;
 }
 
-export function validateImagePath(path: string) {
-  const prefix = '/images/';
-  if (!path.startsWith(prefix)) {
-    return false;
-  }
-  return validateImageFileName(path.replace(prefix, ''));
-}
-
 export function toFullyQualifiedUrl(fileName: string) {
   // If it's already a fully qualified URL then return as is
   const [proto] = fileName.split('//');

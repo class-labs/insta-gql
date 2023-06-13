@@ -2,9 +2,10 @@ import { GraphQLError } from 'graphql';
 import SchemaBuilder from '@pothos/core';
 import { db } from '../db';
 import { removeNulls } from '../support/removeNulls';
-import { toFullyQualifiedUrl, validateImagePath } from '../support/image';
+import { toFullyQualifiedUrl } from '../support/image';
 import type { User, Session, Post, Comment } from '../types';
 import { Context } from './context';
+import { validateImageFileName } from '../support/image';
 
 type Objects = {
   User: User;
@@ -347,8 +348,10 @@ builder.mutationType({
       },
       resolve: async (parent, args, context) => {
         const user = await context.authenticate();
-        const { photo, caption } = args.input;
-        if (!validateImagePath(photo)) {
+        const { caption } = args.input;
+        // For legacy reasons, trim any leading path
+        const photo = args.input.photo.split('/').pop() ?? '';
+        if (!validateImageFileName(photo)) {
           throw new GraphQLError('Invalid photo');
         }
         const post = await db.Post.insert({
